@@ -232,8 +232,21 @@ class Orchestrator {
     // Reconstruct agent metadata from config (processes are ephemeral)
     // CRITICAL: Pass isolation context to agents if cluster was running in isolation
     const agents = [];
+
+    // CRITICAL: Determine the correct cwd for agents (worktree > isolation > saved cwd)
+    // This fixes clusters saved before the cwd injection bug was fixed
+    const worktreePath = clusterData.worktree?.path;
+    const isolationWorkDir = clusterData.isolation?.workDir;
+    const agentCwd = worktreePath || isolationWorkDir || null;
+
     if (clusterData.config?.agents) {
       for (const agentConfig of clusterData.config.agents) {
+        // Fix agents that were saved without cwd (pre-bugfix clusters)
+        if (!agentConfig.cwd && agentCwd) {
+          agentConfig.cwd = agentCwd;
+          this._log(`[Orchestrator] Fixed missing cwd for agent ${agentConfig.id}: ${agentCwd}`);
+        }
+
         const agentOptions = {
           id: clusterId,
           quiet: this.quiet,
@@ -1664,7 +1677,17 @@ Continue from where you left off. Review your previous output to understand what
       throw new Error('add_agents operation missing agents array');
     }
 
+    // CRITICAL: Inject cluster's worktree cwd into dynamically added agents
+    // Without this, template agents (planning, implementation, validator) run in
+    // original directory instead of worktree, causing --ship mode to pollute main
+    const agentCwd = cluster.worktree?.path || cluster.isolation?.workDir || process.cwd();
+
     for (const agentConfig of agents) {
+      // Inject cwd if not already set (same as startCluster does for initial agents)
+      if (!agentConfig.cwd) {
+        agentConfig.cwd = agentCwd;
+        this._log(`    [cwd] Injected worktree cwd for ${agentConfig.id}: ${agentCwd}`);
+      }
       // Validate agent config has required fields
       if (!agentConfig.id) {
         throw new Error('Agent config missing required field: id');

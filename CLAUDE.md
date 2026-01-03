@@ -169,6 +169,16 @@ Clusters survive crashes. Resume: `zeroshot resume <id>`
 
 **Bash subprocess output not streamed:** Claude CLI returns `tool_result` after subprocess completes. Long scripts show no output until done.
 
+## Fixed Bugs (Reference)
+
+### Template Agent CWD Injection (2026-01-03)
+
+**Bug:** `--ship` mode created worktree but template agents (planning, implementation, validator) ran in main directory instead, polluting it with uncommitted changes.
+
+**Root cause:** `_opAddAgents()` didn't inject cluster's worktree cwd into dynamically spawned template agents. Initial agents got cwd via `startCluster()`, but template agents loaded later via conductor classification missed it.
+
+**Fix:** Added cwd injection to `_opAddAgents()` and resume path in `orchestrator.js`. Test: `tests/worktree-cwd-injection.test.js`
+
 ## Mechanical Enforcement
 
 | Antipattern | Enforcement |
