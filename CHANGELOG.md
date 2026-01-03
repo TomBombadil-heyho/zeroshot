@@ -1,3 +1,37 @@
+# [3.1.0](https://github.com/covibes/zeroshot/compare/v3.0.0...v3.1.0) (2026-01-03)
+
+
+### Bug Fixes
+
+* **attach:** detect cluster IDs without prefix by checking clusters.json ([a3f3b3a](https://github.com/covibes/zeroshot/commit/a3f3b3a1c3de47333297b98327f36aefb36cb958))
+* **cli:** use canonical AGENT_STATE constants for status footer ([ac53f83](https://github.com/covibes/zeroshot/commit/ac53f83b0af9a7f2de8264ca791457e4e0afca9a))
+* **footer:** show agents during evaluating_logic, building_context, executing_task ([f3c3484](https://github.com/covibes/zeroshot/commit/f3c348400d4b2e960410121cef0614dc583e7528))
+* handle Claude CLI lock contention in parallel validators ([b88d502](https://github.com/covibes/zeroshot/commit/b88d502699c8c0e628310a9b998c4a1f4cb26d1a))
+* **orchestrator:** add missing close() method for test cleanup ([a642886](https://github.com/covibes/zeroshot/commit/a6428867647de4d5b28c61163be87d711e001c7c))
+* **output:** broadcast text output, not just JSON ([adc8556](https://github.com/covibes/zeroshot/commit/adc8556a47e3d02ed7189d8290e9cf81a07c909c))
+* **output:** change from MINIMAL to INFORMATIVE output style ([3b87466](https://github.com/covibes/zeroshot/commit/3b87466eb0012f089edac2fb66a4d118a39e92e0))
+* **planner:** explicitly forbid Deferred and Why defer patterns ([0504b0a](https://github.com/covibes/zeroshot/commit/0504b0a5e4e4cd0c902989e29a3759fbc46aa534))
+* **planner:** forbid scope reduction in planner prompt ([a9dbfb2](https://github.com/covibes/zeroshot/commit/a9dbfb2bef67a14289af91b0cea77880fe3eff3f))
+* **planner:** prevent silent phase omission in scope reduction checks ([7e99787](https://github.com/covibes/zeroshot/commit/7e99787593cd970b45901f7cf1bf641bf4e5f772))
+* **status-footer:** cleanup footer on stop regardless of hidden state ([52fe9e9](https://github.com/covibes/zeroshot/commit/52fe9e9efeae5c768291a9a0810399bfdae03934))
+* **templates:** hardcode completion-detector model to haiku ([78b917e](https://github.com/covibes/zeroshot/commit/78b917e1c97697bf64d7a0897c2b68d8bb0bbaa3))
+* **tests:** set ZEROSHOT_WORKTREE env in git-safety-hook tests ([7399cfc](https://github.com/covibes/zeroshot/commit/7399cfca1d42f748314db355eb247e426fad97a2))
+* **tests:** skip isolation tests when Docker image unavailable ([142f43c](https://github.com/covibes/zeroshot/commit/142f43c6af6e209a95b286556d13bb594985e850))
+* **tests:** update settings test for maxModel rename and fix git hook case sensitivity ([6cbb654](https://github.com/covibes/zeroshot/commit/6cbb654fd2ef15fde9f1454d63cd6aae6807404b))
+* **tests:** update tests for maxModel cost ceiling rename ([45b4ac8](https://github.com/covibes/zeroshot/commit/45b4ac809c480205345be96249608ea2b284f50e))
+* **update-checker:** check npm write permissions before auto-update ([dd9efa8](https://github.com/covibes/zeroshot/commit/dd9efa83edeef812f6d0ad6142a8e8c7ec4006e6))
+* **watcher:** add global error handlers to prevent silent crashes ([cea4b57](https://github.com/covibes/zeroshot/commit/cea4b57fe7cfea899bf8981c2b0d200d1c0a9050))
+* **worker:** forbid scope reduction excuses in worker prompt ([c666847](https://github.com/covibes/zeroshot/commit/c6668473c7f2882482b0593950db780088721925))
+* **worktree:** inject cwd into dynamically spawned template agents ([4c3b916](https://github.com/covibes/zeroshot/commit/4c3b9162e5656133b01ccbf58c91782855669e33))
+
+
+### Features
+
+* **agents:** conditional git restriction based on isolation mode ([70eb368](https://github.com/covibes/zeroshot/commit/70eb3681c3d55747d72b491a4e85279b0e215ab5))
+* **orchestrator:** persist agent runtime states for accurate status display ([4205c7d](https://github.com/covibes/zeroshot/commit/4205c7d0234d3e34e0000ed15ac218c9edb7d048))
+* **validation:** enforce E2E verification with technical constraints ([f2a680a](https://github.com/covibes/zeroshot/commit/f2a680ada66e1485d174084d346c0ae9932ce2c9))
+* **worker:** add aggressive COMPLETION MINDSET to worker prompts ([0c6e37b](https://github.com/covibes/zeroshot/commit/0c6e37b4c0c58cab8b77b7ed1ba23ebb73f55d29))
+
 # [3.0.0](https://github.com/covibes/zeroshot/compare/v2.1.0...v3.0.0) (2025-12-29)
 
 
