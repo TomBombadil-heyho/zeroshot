@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/covibes/zeroshot/compare/v4.0.0...v4.1.0) (2026-01-05)
+
+
+### Features
+
+* **settings:** improve Docker config display with grouped format ([b743673](https://github.com/covibes/zeroshot/commit/b743673f32d101bb0b86c1b619d85e856a1378c4)), closes [#19](https://github.com/covibes/zeroshot/issues/19)
+
 # [4.0.0](https://github.com/covibes/zeroshot/compare/v3.1.0...v4.0.0) (2026-01-04)
 
 
