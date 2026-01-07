@@ -48,7 +48,7 @@ const {
 } = require('../lib/settings');
 const { MOUNT_PRESETS, resolveEnvs } = require('../lib/docker-config');
 const { requirePreflight } = require('../src/preflight');
-const { checkFirstRun } = require('./lib/first-run');
+// Setup wizard removed - use: zeroshot settings set <key> <value>
 const { checkForUpdates } = require('./lib/update-checker');
 const { StatusFooter, AGENT_STATE, ACTIVE_STATES } = require('../src/status-footer');
 
@@ -2771,7 +2771,7 @@ const settingsCmd = program.command('settings').description('Manage zeroshot set
 function formatSettingsList(settings, showUsage = false) {
   const DOCKER_KEYS = ['dockerMounts', 'dockerEnvPassthrough', 'dockerContainerHome'];
 
-  console.log(chalk.bold('\nCrew Settings:\n'));
+  console.log(chalk.bold('\nSettings:\n'));
 
   // Non-docker settings first
   for (const [key, value] of Object.entries(settings)) {
@@ -4480,10 +4480,7 @@ function printMessage(msg, showClusterId = false, watchMode = false, isActive = 
 
 // Main async entry point
 async function main() {
-  // First-run setup wizard (blocks on first use only)
-  // CRITICAL: Auto-enable quiet mode in test environment to prevent stdin hangs
   const isQuiet = process.argv.includes('-q') || process.argv.includes('--quiet') || process.env.NODE_ENV === 'test';
-  await checkFirstRun({ quiet: isQuiet });
 
   // Check for updates (non-blocking if offline)
   await checkForUpdates({ quiet: isQuiet });
