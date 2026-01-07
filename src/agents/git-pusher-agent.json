@@ -7,7 +7,7 @@
       "topic": "VALIDATION_RESULT",
       "logic": {
         "engine": "javascript",
-        "script": "const validators = cluster.getAgentsByRole('validator'); const lastPush = ledger.findLast({ topic: 'IMPLEMENTATION_READY' }); if (!lastPush) return false; const results = ledger.query({ topic: 'VALIDATION_RESULT', since: lastPush.timestamp }); if (results.length < validators.length) return false; const allApproved = results.every(r => r.content?.data?.approved === 'true' || r.content?.data?.approved === true); if (!allApproved) return false; const hasRealEvidence = results.every(r => { const criteria = r.content?.data?.criteriaResults || []; return criteria.every(c => { return c.evidence?.command && typeof c.evidence?.exitCode === 'number' && c.evidence?.output?.length > 10; }); }); return hasRealEvidence;"
+        "script": "const validators = cluster.getAgentsByRole('validator'); const lastPush = ledger.findLast({ topic: 'IMPLEMENTATION_READY' }); if (!lastPush) return false; if (validators.length === 0) return true; const results = ledger.query({ topic: 'VALIDATION_RESULT', since: lastPush.timestamp }); if (results.length < validators.length) return false; const allApproved = results.every(r => r.content?.data?.approved === 'true' || r.content?.data?.approved === true); if (!allApproved) return false; const hasRealEvidence = results.every(r => { const criteria = r.content?.data?.criteriaResults || []; return criteria.every(c => { return c.evidence?.command && typeof c.evidence?.exitCode === 'number' && c.evidence?.output?.length > 10; }); }); return hasRealEvidence;"
       },
       "action": "execute_task"
     }
