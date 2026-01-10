@@ -116,7 +116,9 @@
     "eslint-plugin-unused-imports": "^4.3.0",
     "husky": "^9.1.7",
     "jscpd": "^3.5.10",
+    "lint-staged": "^16.2.7",
     "mocha": "^11.7.5",
+    "prettier": "^3.7.4",
     "semantic-release": "^25.0.2",
     "sinon": "^21.0.0",
     "ts-prune": "^0.10.3",
@@ -125,5 +127,13 @@
   },
   "overrides": {
     "xml2js": "^0.5.0"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs}": [
+      "eslint --fix"
+    ],
+    "*.{js,mjs,cjs,json,md}": [
+      "prettier --write"
+    ]
   }
 }

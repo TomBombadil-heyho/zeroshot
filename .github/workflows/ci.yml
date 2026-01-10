@@ -10,9 +10,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
@@ -60,8 +60,10 @@ jobs:
 
   # Cross-platform/version compatibility
   # NOTE: macOS runners cost 10x Linux minutes - minimal matrix
+  # Only run on main branch and PRs (skip direct dev pushes)
   install-matrix:
     needs: check
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
     strategy:
       fail-fast: false
       matrix:
