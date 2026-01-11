@@ -551,7 +551,7 @@ class Orchestrator {
       isolation: options.isolation || false,
       isolationImage: options.isolationImage,
       worktree: options.worktree || false,
-      autoPr: process.env.ZEROSHOT_PR === '1',
+      autoPr: options.autoPr || process.env.ZEROSHOT_PR === '1',
     });
   }
 
