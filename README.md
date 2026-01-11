@@ -10,6 +10,14 @@
 
 **Autonomous engineering teams for Claude Code.**
 
+<div align="center">
+
+[![Join our Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/PdZ3UEXB)
+
+**💬 Get help · Share workflows · Connect with the community**
+
+</div>
+
 ## Install
 
 **Platforms**: Linux, macOS
@@ -24,20 +32,6 @@ npm install -g @covibes/zeroshot
 npm i -g @anthropic-ai/claude-code && claude auth login
 gh auth login
 ```
-
-<div align="center">
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║                                                                  ║
-║   💬  Join the community · Get help · Share workflows           ║
-║                                                                  ║
-║   ► Discord: https://discord.gg/PdZ3UEXB                        ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-</div>
 
 ---
 
