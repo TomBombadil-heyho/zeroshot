@@ -25,6 +25,20 @@ npm i -g @anthropic-ai/claude-code && claude auth login
 gh auth login
 ```
 
+<div align="center">
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║   💬  Join the community · Get help · Share workflows           ║
+║                                                                  ║
+║   ► Discord: https://discord.gg/PdZ3UEXB                        ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+</div>
+
 ---
 
 You know the problem. Your AI agent:
@@ -66,7 +80,7 @@ with details of what conflicted. Handle the ABA problem where version goes A->B-
 
 **The full fix cycle.** Initial implementation passed basic tests but validators caught edge cases: race conditions in concurrent updates, ABA problem not fully handled, retry backoff timing issues. Each rejection triggered fixes until all 48 tests passed with 91%+ coverage.
 
-A single agent would say "done!" after the first implementation. Here, the adversarial tester actually *runs* concurrent requests, times the retry backoff, and verifies conflict detection works under load.
+A single agent would say "done!" after the first implementation. Here, the adversarial tester actually _runs_ concurrent requests, times the retry backoff, and verifies conflict detection works under load.
 
 **This is what production-grade looks like.** Not "tests pass" — validators reject until it actually works. 5 iterations, each one fixing real bugs the previous attempt missed.
 
@@ -76,21 +90,22 @@ A single agent would say "done!" after the first implementation. Here, the adver
 
 **Zeroshot requires well-defined tasks with clear acceptance criteria.**
 
-| Scenario | Use? | Why |
-|----------|:----:|-----|
-| Add rate limiting (sliding window, per-IP, 429) | ✅ | Clear requirements |
-| Refactor auth to JWT | ✅ | Defined end state |
-| Fix login bug | ✅ | Success is measurable |
-| Fix 2410 lint violations | ✅ | Clear completion criteria |
-| Make the app faster | ❌ | Needs exploration first |
-| Improve the codebase | ❌ | No acceptance criteria |
-| Figure out flaky tests | ❌ | Exploratory |
+| Scenario                                        | Use? | Why                       |
+| ----------------------------------------------- | :--: | ------------------------- |
+| Add rate limiting (sliding window, per-IP, 429) |  ✅  | Clear requirements        |
+| Refactor auth to JWT                            |  ✅  | Defined end state         |
+| Fix login bug                                   |  ✅  | Success is measurable     |
+| Fix 2410 lint violations                        |  ✅  | Clear completion criteria |
+| Make the app faster                             |  ❌  | Needs exploration first   |
+| Improve the codebase                            |  ❌  | No acceptance criteria    |
+| Figure out flaky tests                          |  ❌  | Exploratory               |
 
 **Known unknowns** (implementation details unclear) → Zeroshot handles this. The planner figures it out.
 
 **Unknown unknowns** (don't know what you'll discover) → Use single-agent Claude Code for exploration first, then come back with a well-defined task.
 
 **Long-running batch tasks** → Zeroshot excels here. Run overnight with `-d` (daemon mode):
+
 - "Fix all 2410 semantic linting violations"
 - "Add TypeScript types to all 47 untyped files"
 - "Migrate all API calls from v1 to v2"
@@ -278,6 +293,7 @@ claude
 ```
 
 **Example prompt:**
+
 ```
 Create a zeroshot cluster config for security-critical features:
 
@@ -299,6 +315,7 @@ and create a similar cluster. Save to cluster-templates/security-review.json
 Claude Code will read existing templates, create valid JSON config, and iterate until it works.
 
 **Built-in validation catches failures before running:**
+
 - Never start (no bootstrap trigger)
 - Never complete (no path to completion)
 - Loop infinitely (circular dependencies)
@@ -342,13 +359,13 @@ Full isolation in a fresh container. Your workspace stays untouched. Good for ri
 
 ### When to Use Which
 
-| Scenario | Recommended |
-| -------- | ----------- |
-| Quick task, review changes yourself | No isolation (default) |
-| PR workflow, code review | `--worktree` or `--pr` |
-| Risky experiment, might break things | `--docker` |
-| Running multiple tasks in parallel | `--docker` |
-| Full automation, no review needed | `--ship` |
+| Scenario                             | Recommended            |
+| ------------------------------------ | ---------------------- |
+| Quick task, review changes yourself  | No isolation (default) |
+| PR workflow, code review             | `--worktree` or `--pr` |
+| Risky experiment, might break things | `--docker`             |
+| Running multiple tasks in parallel   | `--docker`             |
+| Full automation, no review needed    | `--ship`               |
 
 **Default mode:** Agents are instructed to only modify files (no git commit/push). You review and commit yourself.
 
@@ -379,6 +396,7 @@ ZEROSHOT_DOCKER_MOUNTS='["aws","azure"]' zeroshot run 123 --docker
 ```
 
 **Custom mounts** (mix presets with explicit paths):
+
 ```bash
 zeroshot settings set dockerMounts '[
   "gh",
@@ -388,6 +406,7 @@ zeroshot settings set dockerMounts '[
 ```
 
 **Container home**: Presets use `$HOME` placeholder. Default: `/root`. Override with:
+
 ```bash
 zeroshot settings set dockerContainerHome '/home/node'
 # Or per-run:
@@ -395,6 +414,7 @@ zeroshot run 123 --docker --container-home /home/node
 ```
 
 **Env var passthrough**: Presets auto-pass related env vars (e.g., `aws` → `AWS_REGION`, `AWS_PROFILE`). Add custom:
+
 ```bash
 zeroshot settings set dockerEnvPassthrough '["MY_API_KEY", "TF_VAR_*"]'
 ```
@@ -414,14 +434,14 @@ zeroshot settings set dockerEnvPassthrough '["MY_API_KEY", "TF_VAR_*"]'
 <details>
 <summary><strong>Troubleshooting</strong></summary>
 
-| Issue                         | Fix                                                                  |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `claude: command not found`   | `npm i -g @anthropic-ai/claude-code && claude auth login`            |
-| `gh: command not found`       | [Install GitHub CLI](https://cli.github.com/)                        |
-| `--docker` fails              | Docker must be running: `docker ps` to verify                        |
-| Cluster stuck                 | `zeroshot resume <id>` to continue with guidance                     |
-| Agent keeps failing           | Check `zeroshot logs <id>` for actual error                          |
-| `zeroshot: command not found` | `npm install -g @covibes/zeroshot`                                   |
+| Issue                         | Fix                                                       |
+| ----------------------------- | --------------------------------------------------------- |
+| `claude: command not found`   | `npm i -g @anthropic-ai/claude-code && claude auth login` |
+| `gh: command not found`       | [Install GitHub CLI](https://cli.github.com/)             |
+| `--docker` fails              | Docker must be running: `docker ps` to verify             |
+| Cluster stuck                 | `zeroshot resume <id>` to continue with guidance          |
+| Agent keeps failing           | Check `zeroshot logs <id>` for actual error               |
+| `zeroshot: command not found` | `npm install -g @covibes/zeroshot`                        |
 
 </details>
 
@@ -440,5 +460,3 @@ For security issues, see [SECURITY.md](SECURITY.md).
 MIT — [Covibes](https://github.com/covibes)
 
 Built on [Claude Code](https://claude.com/product/claude-code) by Anthropic.
-
-
