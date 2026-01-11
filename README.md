@@ -10,53 +10,11 @@
 
 **Autonomous engineering teams for Claude Code.**
 
-<div align="center">
-
-[![Join our Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/PdZ3UEXB)
-
-**💬 Get help · Share workflows · Connect with the community**
-
-</div>
-
-## Install
-
-**Platforms**: Linux, macOS
-
 ```bash
-npm install -g @covibes/zeroshot
+zeroshot 123  # Point at a GitHub issue, walk away, come back to working code
 ```
 
-**Requires**: Node 18+, [Claude Code CLI](https://claude.com/product/claude-code), [GitHub CLI](https://cli.github.com/)
-
-```bash
-npm i -g @anthropic-ai/claude-code && claude auth login
-gh auth login
-```
-
----
-
-You know the problem. Your AI agent:
-
-- Says "tests pass" (never ran them)
-- Says "done!" (nothing works)
-- Implements 60% of what you asked
-- Ignores your coding guidelines
-- Introduces antipatterns like a junior dev
-- Gets sloppy on long tasks
-
-**AI is extremely capable. But not when one agent does everything in one session.**
-
-Context degrades. Attention drifts. Shortcuts get taken.
-
-Zeroshot fixes this with **multiple isolated agents** that check each other's work. The validator didn't write the code, so it can't lie about tests. Fail? Fix and retry until it works.
-
-```bash
-zeroshot 123
-```
-
-Point at a GitHub issue, walk away, come back to working code.
-
-### Demo
+## Demo
 
 ```bash
 zeroshot "Add optimistic locking with automatic retry: when updating a user,
@@ -78,7 +36,45 @@ A single agent would say "done!" after the first implementation. Here, the adver
 
 **This is what production-grade looks like.** Not "tests pass" — validators reject until it actually works. 5 iterations, each one fixing real bugs the previous attempt missed.
 
----
+## Why Zeroshot?
+
+You know the problem. Your AI agent:
+
+- Says "tests pass" (never ran them)
+- Says "done!" (nothing works)
+- Implements 60% of what you asked
+- Ignores your coding guidelines
+- Introduces antipatterns like a junior dev
+- Gets sloppy on long tasks
+
+**AI is extremely capable. But not when one agent does everything in one session.**
+
+Context degrades. Attention drifts. Shortcuts get taken.
+
+Zeroshot fixes this with **multiple isolated agents** that check each other's work. The validator didn't write the code, so it can't lie about tests. Fail? Fix and retry until it works.
+
+> **Why "zeroshot"?** In ML, zero-shot means solving tasks without prior examples. Same idea here: give it a well-defined task, get back a result. No hand-holding. The multi-agent architecture handles everything internally.
+
+<div align="center">
+
+[![Join our Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/PdZ3UEXB)
+
+</div>
+
+## Install
+
+**Platforms**: Linux, macOS (Windows WSL not yet supported)
+
+```bash
+npm install -g @covibes/zeroshot
+```
+
+**Requires**: Node 18+, [Claude Code CLI](https://claude.com/product/claude-code), [GitHub CLI](https://cli.github.com/)
+
+```bash
+npm i -g @anthropic-ai/claude-code && claude auth login
+gh auth login
+```
 
 ## When to Use Zeroshot
 
@@ -143,8 +139,6 @@ zeroshot clean                 # Remove old records
 zeroshot purge                 # NUCLEAR: kill all + delete all
 ```
 
----
-
 <details>
 <summary><strong>FAQ</strong></summary>
 
@@ -177,8 +171,6 @@ Same idea here: give zeroshot a well-defined task, get back a result. No example
 The multi-agent architecture handles planning, implementation, and validation internally. You provide a clear problem statement. Zeroshot handles the rest.
 
 </details>
-
----
 
 ## How It Works
 
@@ -258,8 +250,6 @@ The conductor classifies your task (complexity × type) and picks the right work
 
 Set model ceiling: `zeroshot settings set maxModel sonnet` (prevents opus)
 
----
-
 <details>
 <summary><strong>Custom Workflows (Framework Mode)</strong></summary>
 
@@ -320,8 +310,6 @@ See [CLAUDE.md](./CLAUDE.md) for cluster config schema and examples.
 
 </details>
 
----
-
 ## Crash Recovery
 
 Everything saves to SQLite. If your 2-hour run crashes at 1:59:
@@ -330,8 +318,6 @@ Everything saves to SQLite. If your 2-hour run crashes at 1:59:
 zeroshot resume cluster-bold-panther
 # Continues from exact point
 ```
-
----
 
 ## Isolation Modes
 
@@ -415,15 +401,14 @@ zeroshot settings set dockerEnvPassthrough '["MY_API_KEY", "TF_VAR_*"]'
 
 </details>
 
----
+## Resources
 
-## More
-
-- **Debug**: `sqlite3 ~/.zeroshot/cluster-abc.db "SELECT * FROM messages;"`
-- **Export**: `zeroshot export <id> --format markdown`
-- **Architecture**: See [CLAUDE.md](./CLAUDE.md)
-
----
+| Resource                               | Description                                                |
+| -------------------------------------- | ---------------------------------------------------------- |
+| [CLAUDE.md](./CLAUDE.md)               | Architecture docs, cluster config schema, agent primitives |
+| [Discord](https://discord.gg/PdZ3UEXB) | Get help, share workflows, connect with the community      |
+| `zeroshot export <id>`                 | Export cluster conversation to markdown                    |
+| `sqlite3 ~/.zeroshot/*.db`             | Direct database access for debugging                       |
 
 <details>
 <summary><strong>Troubleshooting</strong></summary>
@@ -438,8 +423,6 @@ zeroshot settings set dockerEnvPassthrough '["MY_API_KEY", "TF_VAR_*"]'
 | `zeroshot: command not found` | `npm install -g @covibes/zeroshot`                        |
 
 </details>
-
----
 
 ## Contributing
 
