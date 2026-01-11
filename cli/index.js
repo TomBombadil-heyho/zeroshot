@@ -3396,6 +3396,222 @@ function outputAgent(agent, options) {
   }
 }
 
+// =============================================================================
+// BRANCH MANAGEMENT COMMANDS
+// =============================================================================
+const branchCmd = program.command('branches').description('Manage git branches in the repository');
+
+branchCmd
+  .command('list')
+  .alias('ls')
+  .description('List all branches in the repository')
+  .option('--remote', 'Include remote branches')
+  .option('--json', 'Output as JSON')
+  .action((options) => {
+    const {
+      isGitRepo,
+      getDefaultBranch,
+      getCurrentBranch,
+      listLocalBranches,
+      listRemoteBranches,
+    } = require('../lib/branch-manager');
+
+    if (!isGitRepo()) {
+      console.error(chalk.red('Error: Not a git repository'));
+      process.exit(1);
+    }
+
+    const defaultBranch = getDefaultBranch();
+    const currentBranch = getCurrentBranch();
+    const localBranches = listLocalBranches();
+
+    if (options.json) {
+      const result = {
+        default: defaultBranch,
+        current: currentBranch,
+        local: localBranches,
+      };
+
+      if (options.remote) {
+        result.remote = listRemoteBranches();
+      }
+
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(chalk.bold('\nLocal Branches:\n'));
+    for (const branch of localBranches) {
+      const isDefault = branch === defaultBranch;
+      const isCurrent = branch === currentBranch;
+
+      let marker = '  ';
+      if (isCurrent) marker = chalk.green('* ');
+      else if (isDefault) marker = chalk.cyan('→ ');
+
+      const name = isCurrent ? chalk.green(branch) : branch;
+      const label = isDefault ? chalk.dim(' (default)') : '';
+      console.log(`${marker}${name}${label}`);
+    }
+
+    if (options.remote) {
+      const remoteBranches = listRemoteBranches();
+      console.log(chalk.bold('\nRemote Branches:\n'));
+      for (const { remote, branch } of remoteBranches) {
+        const isDefault = branch === defaultBranch;
+        const marker = isDefault ? chalk.cyan('→ ') : '  ';
+        const label = isDefault ? chalk.dim(' (default)') : '';
+        console.log(`${marker}${chalk.dim(remote + '/')}${branch}${label}`);
+      }
+    }
+
+    console.log('');
+  });
+
+branchCmd
+  .command('clean')
+  .description('Delete branches except the default branch')
+  .option('--remote', 'Also delete remote branches')
+  .option('--force', 'Force delete branches even if not merged')
+  .option('--dry-run', 'Show what would be deleted without actually deleting')
+  .option('--yes', 'Skip confirmation prompt')
+  .option('--protect <branches...>', 'Additional branches to protect (space-separated)')
+  .action(async (options) => {
+    const {
+      isGitRepo,
+      getDefaultBranch,
+      getCurrentBranch,
+      getBranchesToClean,
+      deleteLocalBranch,
+      deleteRemoteBranch,
+      isBranchMerged,
+    } = require('../lib/branch-manager');
+    const readline = require('readline');
+
+    if (!isGitRepo()) {
+      console.error(chalk.red('Error: Not a git repository'));
+      process.exit(1);
+    }
+
+    const defaultBranch = getDefaultBranch();
+    const currentBranch = getCurrentBranch();
+
+    console.log(chalk.bold('\nBranch Cleanup\n'));
+    console.log(chalk.dim(`Default branch: ${defaultBranch}`));
+    console.log(chalk.dim(`Current branch: ${currentBranch}`));
+    console.log('');
+
+    // Get branches to clean
+    const { local, remote } = getBranchesToClean({
+      protect: options.protect || [],
+      includeRemote: options.remote,
+    });
+
+    if (local.length === 0 && remote.length === 0) {
+      console.log(chalk.green('✓ No branches to clean up'));
+      return;
+    }
+
+    // Show what will be deleted
+    if (local.length > 0) {
+      console.log(chalk.bold('Local branches to delete:'));
+      for (const branch of local) {
+        const merged = isBranchMerged(branch);
+        const status = merged ? chalk.green('merged') : chalk.yellow('not merged');
+        const warning = !merged && !options.force ? chalk.yellow(' (will be skipped without --force)') : '';
+        console.log(`  ${chalk.cyan(branch)} ${chalk.dim(`[${status}]`)}${warning}`);
+      }
+      console.log('');
+    }
+
+    if (options.remote && remote.length > 0) {
+      console.log(chalk.bold('Remote branches to delete:'));
+      for (const { remote: remoteName, branch } of remote) {
+        console.log(`  ${chalk.cyan(`${remoteName}/${branch}`)}`);
+      }
+      console.log('');
+    }
+
+    // Dry run mode
+    if (options.dryRun) {
+      console.log(chalk.yellow('Dry run mode: no branches will be deleted'));
+      return;
+    }
+
+    // Confirmation prompt
+    if (!options.yes) {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      const answer = await new Promise((resolve) => {
+        rl.question(chalk.yellow('Are you sure you want to delete these branches? (y/N): '), (ans) => {
+          rl.close();
+          resolve(ans);
+        });
+      });
+
+      if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+        console.log(chalk.dim('Cancelled'));
+        return;
+      }
+    }
+
+    // Delete local branches
+    let deletedCount = 0;
+    let skippedCount = 0;
+
+    console.log('');
+    if (local.length > 0) {
+      console.log(chalk.bold('Deleting local branches:\n'));
+      for (const branch of local) {
+        const merged = isBranchMerged(branch);
+        
+        // Skip unmerged branches unless force is enabled
+        if (!merged && !options.force) {
+          console.log(`  ${chalk.yellow('⊘')} ${branch} ${chalk.dim('(not merged, skipped)')}`);
+          skippedCount++;
+          continue;
+        }
+
+        const result = deleteLocalBranch(branch, process.cwd(), options.force);
+        if (result.success) {
+          console.log(`  ${chalk.green('✓')} ${branch}`);
+          deletedCount++;
+        } else {
+          console.log(`  ${chalk.red('✗')} ${branch} ${chalk.dim(`(${result.error})`)}`);
+          skippedCount++;
+        }
+      }
+      console.log('');
+    }
+
+    // Delete remote branches
+    if (options.remote && remote.length > 0) {
+      console.log(chalk.bold('Deleting remote branches:\n'));
+      for (const { remote: remoteName, branch } of remote) {
+        const result = deleteRemoteBranch(remoteName, branch);
+        if (result.success) {
+          console.log(`  ${chalk.green('✓')} ${remoteName}/${branch}`);
+          deletedCount++;
+        } else {
+          console.log(`  ${chalk.red('✗')} ${remoteName}/${branch} ${chalk.dim(`(${result.error})`)}`);
+          skippedCount++;
+        }
+      }
+      console.log('');
+    }
+
+    // Summary
+    console.log(chalk.bold('Summary:'));
+    console.log(`  ${chalk.green(`✓ Deleted: ${deletedCount}`)}`);
+    if (skippedCount > 0) {
+      console.log(`  ${chalk.yellow(`⊘ Skipped: ${skippedCount}`)}`);
+    }
+    console.log('');
+  });
+
 // Helper function to keep the process alive for follow mode
 function keepProcessAlive(cleanupFn) {
   // Prevent Node.js from exiting by keeping the event loop active
