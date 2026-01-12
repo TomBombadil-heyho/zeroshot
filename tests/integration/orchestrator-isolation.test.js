@@ -2,7 +2,7 @@
  * Integration tests for Orchestrator + Isolation mode
  *
  * Verifies the REAL isolation mode flow:
- * - Workspace copied to /tmp/zeroshot-isolated/{clusterId}/
+ * - Workspace copied to {os.tmpdir()}/zeroshot-isolated/{clusterId}/
  * - Fresh git repo with feature branch zeroshot/{clusterId}
  * - Claude config with PreToolUse hook to block AskUserQuestion
  * - Container mounts correct directories
@@ -167,10 +167,14 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should create container with correct mounts and state', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test task' }, {
-        isolation: true,
-        cwd: process.cwd(), // Use real git repo for realistic isolation
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test task' },
+        {
+          isolation: true,
+          cwd: process.cwd(), // Use real git repo for realistic isolation
+        }
+      );
 
       const cluster = orchestrator.getCluster(result.id);
       assert(cluster.isolation, 'Cluster should have isolation info');
@@ -180,36 +184,39 @@ describe('Orchestrator Isolation Mode Integration', function () {
       assert(containerId, 'Container ID should exist');
 
       // VERIFY: Container is running
-      const running = execSync(
-        `docker inspect ${containerId} --format '{{.State.Running}}'`
-      ).toString().trim();
+      const running = execSync(`docker inspect ${containerId} --format '{{.State.Running}}'`)
+        .toString()
+        .trim();
       assert.strictEqual(running, 'true', 'Container should be running');
 
       // VERIFY: Workspace mounted at /workspace
       const wsExists = execSync(
         `docker exec ${containerId} test -d /workspace && echo yes || echo no`
-      ).toString().trim();
+      )
+        .toString()
+        .trim();
       assert.strictEqual(wsExists, 'yes', 'Workspace should be mounted');
 
       // VERIFY: Git repo with feature branch
-      const branch = execSync(
-        `docker exec ${containerId} git branch --show-current`
-      ).toString().trim();
-      assert(
-        branch.startsWith('zeroshot/'),
-        `Branch should start with zeroshot/, got: ${branch}`
-      );
+      const branch = execSync(`docker exec ${containerId} git branch --show-current`)
+        .toString()
+        .trim();
+      assert(branch.startsWith('zeroshot/'), `Branch should start with zeroshot/, got: ${branch}`);
 
       // VERIFY: Claude config with AskUserQuestion blocking hook
       const hookExists = execSync(
         `docker exec ${containerId} grep -q AskUserQuestion /home/node/.claude/settings.json && echo yes || echo no`
-      ).toString().trim();
+      )
+        .toString()
+        .trim();
       assert.strictEqual(hookExists, 'yes', 'Claude config should have AskUserQuestion hook');
 
       // VERIFY: Projects directory exists (Claude CLI needs this)
       const projectsDirExists = execSync(
         `docker exec ${containerId} test -d /home/node/.claude/projects && echo yes || echo no`
-      ).toString().trim();
+      )
+        .toString()
+        .trim();
       assert.strictEqual(projectsDirExists, 'yes', 'Claude projects directory should exist');
 
       await orchestrator.stop(result.id);
@@ -218,21 +225,27 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should preserve workspace on stop for resume capability', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test stop cleanup' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test stop cleanup' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const clusterId = result.id;
       const cluster = orchestrator.getCluster(clusterId);
       const containerId = cluster.isolation.containerId;
-      const isolatedPath = `/tmp/zeroshot-isolated/${clusterId}`;
-      const configPath = `/tmp/zeroshot-cluster-configs/${clusterId}`;
+      const isolatedPath = path.join(os.tmpdir(), 'zeroshot-isolated', clusterId);
+      const configPath = path.join(os.tmpdir(), 'zeroshot-cluster-configs', clusterId);
 
       // Verify container exists before stop
       const beforeStop = execSync(
         `docker inspect ${containerId} --format '{{.State.Running}}' 2>/dev/null || echo not_found`
-      ).toString().trim();
+      )
+        .toString()
+        .trim();
       assert.strictEqual(beforeStop, 'true', 'Container should exist before stop');
 
       // Stop cluster (should preserve workspace for resume)
@@ -253,24 +266,25 @@ describe('Orchestrator Isolation Mode Integration', function () {
       );
 
       // VERIFY: Cluster config dir is cleaned (will be recreated on resume)
-      assert(
-        !fs.existsSync(configPath),
-        `Cluster config dir should be removed: ${configPath}`
-      );
+      assert(!fs.existsSync(configPath), `Cluster config dir should be removed: ${configPath}`);
     });
 
     it('should fully clean up workspace and container on kill', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test kill cleanup' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test kill cleanup' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const clusterId = result.id;
       const cluster = orchestrator.getCluster(clusterId);
       const containerId = cluster.isolation.containerId;
-      const isolatedPath = `/tmp/zeroshot-isolated/${clusterId}`;
+      const isolatedPath = path.join(os.tmpdir(), 'zeroshot-isolated', clusterId);
 
       // Kill cluster (full cleanup, no resume possible)
       await orchestrator.kill(clusterId);
@@ -293,10 +307,14 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should force-remove container on kill', async function () {
       mockRunner.when('worker').delays(60000, '{"done": true}'); // Long delay
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test kill' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test kill' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const cluster = orchestrator.getCluster(result.id);
       const containerId = cluster.isolation.containerId;
@@ -318,10 +336,14 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should execute MockTaskRunner for agent inside container context', async function () {
       mockRunner.when('worker').returns('{"summary": "Feature implemented"}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test agent execution' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test agent execution' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       await waitForClusterState(orchestrator, result.id, 'stopped', 60000);
 
@@ -330,10 +352,7 @@ describe('Orchestrator Isolation Mode Integration', function () {
 
       // VERIFY: Context included the task
       const calls = mockRunner.getCalls('worker');
-      assert(
-        calls[0].context.includes('Test agent execution'),
-        'Context should include task text'
-      );
+      assert(calls[0].context.includes('Test agent execution'), 'Context should include task text');
 
       // VERIFY: Message published to ledger
       const cluster = orchestrator.getCluster(result.id);
@@ -348,10 +367,14 @@ describe('Orchestrator Isolation Mode Integration', function () {
       mockRunner.when('worker').returns('{"summary": "Implemented the feature"}');
       mockRunner.when('validator').returns('{"approved": true, "summary": "LGTM"}');
 
-      const result = await orchestrator.start(workerValidatorConfig, { text: 'Test multi-agent' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        workerValidatorConfig,
+        { text: 'Test multi-agent' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       await waitForClusterState(orchestrator, result.id, 'stopped', 60000);
 
@@ -366,20 +389,20 @@ describe('Orchestrator Isolation Mode Integration', function () {
         topic: 'VALIDATION_RESULT',
       });
       assert(validations.length > 0, 'VALIDATION_RESULT should be published');
-      assert.strictEqual(
-        validations[0].content.data.approved,
-        true,
-        'Validator should approve'
-      );
+      assert.strictEqual(validations[0].content.data.approved, true, 'Validator should approve');
     });
 
     it('should publish messages in correct order in isolation', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test message order' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test message order' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       await waitForClusterState(orchestrator, result.id, 'stopped', 60000);
 
@@ -393,10 +416,7 @@ describe('Orchestrator Isolation Mode Integration', function () {
 
       // VERIFY: Correct order
       assert.strictEqual(workflowTopics[0], 'ISSUE_OPENED', 'First should be ISSUE_OPENED');
-      assert(
-        workflowTopics.includes('TASK_COMPLETE'),
-        'Should include TASK_COMPLETE'
-      );
+      assert(workflowTopics.includes('TASK_COMPLETE'), 'Should include TASK_COMPLETE');
     });
   });
 
@@ -425,15 +445,19 @@ describe('Orchestrator Isolation Mode Integration', function () {
       mockRunner.when('worker').returns('{"done": true}');
 
       // Start cluster in isolation mode
-      const result = await orchestrator.start(resumeTestConfig, { text: 'Test resume' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        resumeTestConfig,
+        { text: 'Test resume' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const clusterId = result.id;
       const cluster = orchestrator.getCluster(clusterId);
       const oldContainerId = cluster.isolation.containerId;
-      const isolatedPath = `/tmp/zeroshot-isolated/${clusterId}`;
+      const isolatedPath = path.join(os.tmpdir(), 'zeroshot-isolated', clusterId);
 
       // Wait for first task to complete
       await new Promise((r) => setTimeout(r, 2000));
@@ -471,21 +495,23 @@ describe('Orchestrator Isolation Mode Integration', function () {
       );
 
       // VERIFY: New container is running
-      const running = execSync(
-        `docker inspect ${newContainerId} --format '{{.State.Running}}'`
-      ).toString().trim();
+      const running = execSync(`docker inspect ${newContainerId} --format '{{.State.Running}}'`)
+        .toString()
+        .trim();
       assert.strictEqual(running, 'true', 'New container should be running');
 
       // VERIFY: Workspace mounted (same preserved workspace)
       const wsExists = execSync(
         `docker exec ${newContainerId} test -d /workspace && echo yes || echo no`
-      ).toString().trim();
+      )
+        .toString()
+        .trim();
       assert.strictEqual(wsExists, 'yes', 'Workspace should be mounted');
 
       // VERIFY: Git branch preserved (work not lost)
-      const branch = execSync(
-        `docker exec ${newContainerId} git branch --show-current`
-      ).toString().trim();
+      const branch = execSync(`docker exec ${newContainerId} git branch --show-current`)
+        .toString()
+        .trim();
       assert(branch.startsWith('zeroshot/'), 'Git branch should be preserved');
 
       await orchestrator.kill(clusterId);
@@ -494,10 +520,14 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should update all agents with new container ID on resume', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(resumeTestConfig, { text: 'Test agent update' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        resumeTestConfig,
+        { text: 'Test agent update' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const clusterId = result.id;
       await new Promise((r) => setTimeout(r, 2000));
@@ -515,10 +545,7 @@ describe('Orchestrator Isolation Mode Integration', function () {
       for (const agent of cluster.agents) {
         if (agent.isolation?.enabled) {
           // Agent should have access to container manager
-          assert(
-            agent.isolation.manager,
-            `Agent ${agent.id} should have isolation manager`
-          );
+          assert(agent.isolation.manager, `Agent ${agent.id} should have isolation manager`);
         }
       }
 
@@ -534,13 +561,17 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should not be resumable after kill (cluster removed)', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(resumeTestConfig, { text: 'Test fail' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        resumeTestConfig,
+        { text: 'Test fail' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const clusterId = result.id;
-      const isolatedPath = `/tmp/zeroshot-isolated/${clusterId}`;
+      const isolatedPath = path.join(os.tmpdir(), 'zeroshot-isolated', clusterId);
       await new Promise((r) => setTimeout(r, 2000));
 
       // VERIFY: Workspace exists before kill
@@ -563,10 +594,7 @@ describe('Orchestrator Isolation Mode Integration', function () {
       });
 
       // VERIFY: Cluster not found (killed clusters are not persisted)
-      assert(
-        !newOrchestrator.getCluster(clusterId),
-        'Killed cluster should not be loadable'
-      );
+      assert(!newOrchestrator.getCluster(clusterId), 'Killed cluster should not be loadable');
 
       // Try to resume - should fail because cluster doesn't exist
       try {
@@ -585,24 +613,28 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should create fresh git repo with single initial commit', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test git isolation' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test git isolation' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const cluster = orchestrator.getCluster(result.id);
       const containerId = cluster.isolation.containerId;
 
       // VERIFY: Git log shows exactly one commit
-      const commitCount = execSync(
-        `docker exec ${containerId} git rev-list --count HEAD`
-      ).toString().trim();
+      const commitCount = execSync(`docker exec ${containerId} git rev-list --count HEAD`)
+        .toString()
+        .trim();
       assert.strictEqual(commitCount, '1', 'Should have exactly one initial commit');
 
       // VERIFY: Commit message indicates isolated copy
-      const commitMsg = execSync(
-        `docker exec ${containerId} git log -1 --format=%s`
-      ).toString().trim();
+      const commitMsg = execSync(`docker exec ${containerId} git log -1 --format=%s`)
+        .toString()
+        .trim();
       assert(
         commitMsg.includes('Initial commit') || commitMsg.includes('isolated'),
         `Commit message should indicate isolation: ${commitMsg}`
@@ -614,18 +646,22 @@ describe('Orchestrator Isolation Mode Integration', function () {
     it('should create feature branch with clusterId', async function () {
       mockRunner.when('worker').returns('{"done": true}');
 
-      const result = await orchestrator.start(simpleConfig, { text: 'Test branch' }, {
-        isolation: true,
-        cwd: process.cwd(),
-      });
+      const result = await orchestrator.start(
+        simpleConfig,
+        { text: 'Test branch' },
+        {
+          isolation: true,
+          cwd: process.cwd(),
+        }
+      );
 
       const cluster = orchestrator.getCluster(result.id);
       const containerId = cluster.isolation.containerId;
 
       // VERIFY: Branch name includes cluster ID
-      const branch = execSync(
-        `docker exec ${containerId} git branch --show-current`
-      ).toString().trim();
+      const branch = execSync(`docker exec ${containerId} git branch --show-current`)
+        .toString()
+        .trim();
 
       // Extract cluster suffix from full ID (e.g., cluster-cosmic-meteor-87 -> cosmic-meteor-87)
       const clusterSuffix = result.id.replace(/^cluster-/, '');
@@ -661,6 +697,6 @@ async function waitForClusterState(orchestrator, clusterId, targetState, timeout
   const cluster = orchestrator.getCluster(clusterId);
   throw new Error(
     `Timeout waiting for cluster ${clusterId} to reach state '${targetState}'. ` +
-    `Current state: ${cluster?.state}`
+      `Current state: ${cluster?.state}`
   );
 }

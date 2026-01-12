@@ -70,6 +70,7 @@
    - Error: AssertionError [ERR_ASSERTION]: Isolated workspace should be PRESERVED for resume: /tmp/zeroshot-isolated/flaming-surge-53
    - Expected vs actual: true expected, false actual
    - Location: tests/integration/orchestrator-isolation.test.js:250:7
+   - Status: Fixed (pending verification)
 
 9. Orchestrator Isolation Mode Integration
    - Suite: Resume Capability
@@ -77,6 +78,7 @@
    - Error: AssertionError [ERR_ASSERTION]: Workspace should be preserved for resume
    - Expected vs actual: true expected, false actual
    - Location: tests/integration/orchestrator-isolation.test.js:451:7
+   - Status: Fixed (pending verification)
 
 10. Orchestrator Isolation Mode Integration
     - Suite: Resume Capability
@@ -84,6 +86,7 @@
     - Error: AssertionError [ERR_ASSERTION]: Workspace should exist before kill
     - Expected vs actual: true expected, false actual
     - Location: tests/integration/orchestrator-isolation.test.js:547:7
+    - Status: Fixed (pending verification)
 
 11. Orchestrator Isolation Mode Integration
     - Suite: Container Lifecycle
@@ -91,6 +94,7 @@
     - Error: AssertionError [ERR_ASSERTION]: Isolated workspace should be PRESERVED for resume: /tmp/zeroshot-isolated/sonic-glyph-68
     - Expected vs actual: true expected, false actual
     - Location: tests/integration/slow/orchestrator-isolation.test.js:253:7
+    - Status: Fixed (pending verification)
 
 12. Orchestrator Isolation Mode Integration
     - Suite: Resume Capability
@@ -98,6 +102,7 @@
     - Error: AssertionError [ERR_ASSERTION]: Workspace should be preserved for resume
     - Expected vs actual: true expected, false actual
     - Location: tests/integration/slow/orchestrator-isolation.test.js:454:7
+    - Status: Fixed (pending verification)
 
 13. Orchestrator Isolation Mode Integration
     - Suite: Resume Capability
@@ -105,6 +110,7 @@
     - Error: AssertionError [ERR_ASSERTION]: Workspace should exist before kill
     - Expected vs actual: true expected, false actual
     - Location: tests/integration/slow/orchestrator-isolation.test.js:550:7
+    - Status: Fixed (pending verification)
 
 14. Isolated Mode Output Capture
     - Test: should read agent output from log file, not spawn stdout
