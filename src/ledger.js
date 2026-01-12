@@ -19,6 +19,7 @@ class Ledger extends EventEmitter {
     this.cache = new Map(); // LRU cache for queries
     this.cacheLimit = 1000;
     this._closed = false; // Track closed state to prevent write-after-close
+    this._lastTimestamp = 0;
     this._initSchema();
   }
 
@@ -52,6 +53,7 @@ class Ledger extends EventEmitter {
     `);
 
     this._prepareStatements();
+    this._loadLastTimestamp();
   }
 
   _prepareStatements() {
@@ -69,6 +71,13 @@ class Ledger extends EventEmitter {
     };
   }
 
+  _loadLastTimestamp() {
+    const row = this.db.prepare('SELECT MAX(timestamp) AS max_timestamp FROM messages').get();
+    if (row && Number.isFinite(row.max_timestamp)) {
+      this._lastTimestamp = row.max_timestamp;
+    }
+  }
+
   /**
    * Append a message to the ledger
    * @param {Object} message - Message object
@@ -83,7 +92,10 @@ class Ledger extends EventEmitter {
     }
 
     const id = message.id || `msg_${crypto.randomBytes(16).toString('hex')}`;
-    const timestamp = message.timestamp || Date.now();
+    const baseTimestamp = Math.max(Date.now(), this._lastTimestamp + 1);
+    const requestedTimestamp = typeof message.timestamp === 'number' ? message.timestamp : null;
+    const timestamp =
+      requestedTimestamp !== null ? Math.max(requestedTimestamp, baseTimestamp) : baseTimestamp;
 
     const record = {
       id,
@@ -112,6 +124,8 @@ class Ledger extends EventEmitter {
 
       // Invalidate cache
       this.cache.clear();
+
+      this._lastTimestamp = Math.max(this._lastTimestamp, timestamp);
 
       // Emit event for subscriptions
       const fullMessage = this._deserializeMessage(record);
@@ -149,13 +163,13 @@ class Ledger extends EventEmitter {
     // Create transaction function - all inserts happen atomically
     const insertMany = this.db.transaction((msgs) => {
       const results = [];
-      const baseTimestamp = Date.now();
+      const baseTimestamp = Math.max(Date.now(), this._lastTimestamp + 1);
 
       for (let i = 0; i < msgs.length; i++) {
         const message = msgs[i];
         const id = message.id || `msg_${crypto.randomBytes(16).toString('hex')}`;
         // Use incrementing timestamps to preserve order within batch
-        const timestamp = message.timestamp || baseTimestamp + i;
+        const timestamp = baseTimestamp + i;
 
         const record = {
           id,
@@ -184,15 +198,17 @@ class Ledger extends EventEmitter {
         results.push(this._deserializeMessage(record));
       }
 
-      return results;
+      return { results, baseTimestamp };
     });
 
     try {
       // Execute transaction (atomic - all or nothing)
-      const appendedMessages = insertMany(messages);
+      const { results: appendedMessages, baseTimestamp } = insertMany(messages);
 
       // Invalidate cache
       this.cache.clear();
+
+      this._lastTimestamp = Math.max(this._lastTimestamp, baseTimestamp + messages.length - 1);
 
       // Emit events for subscriptions AFTER transaction commits
       // This ensures listeners see consistent state
